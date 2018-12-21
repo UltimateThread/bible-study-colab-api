@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace bible_study_colab_api
+namespace BibleStudyColabApi
 {
     public class Program
     {

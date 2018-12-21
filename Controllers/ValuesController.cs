@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-namespace bible_study_colab_api.Controllers
+namespace BibleStudyColabApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
