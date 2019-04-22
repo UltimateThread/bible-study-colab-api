@@ -1,5 +1,5 @@
-﻿using BibleStudyColabApi.Entities;
-using BibleStudyColabApi.Helpers;
+﻿using BibleStudyColabApi.Helpers;
+using BibleStudyColabApi.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BibleStudyColabApi.Services
 {
-   public class UserService: IUserService
+   public class UserService : IUserService
    {
       // users hardcoded for simplicity, store in a db with hashed passwords in production applications
       // TODO: replace with DB model
@@ -61,7 +61,8 @@ namespace BibleStudyColabApi.Services
       public IEnumerable<User> GetAll()
       {
          // return users without passwords
-         return _users.Select(x => {
+         return _users.Select(x =>
+         {
             x.Password = null;
             return x;
          });
