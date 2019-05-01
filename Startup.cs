@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using BibleStudyColabApi.Helpers;
 using BibleStudyColabApi.Models;
 using BibleStudyColabApi.Services;
+using Microsoft.AspNet.OData.Builder;
+using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -17,6 +19,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OData.Edm;
 
 namespace BibleStudyColabApi
 {
@@ -32,6 +35,7 @@ namespace BibleStudyColabApi
       // This method gets called by the runtime. Use this method to add services to the container.
       public void ConfigureServices(IServiceCollection services)
       {
+         services.AddOData();
          services.AddCors();
          services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
@@ -93,7 +97,18 @@ namespace BibleStudyColabApi
          app.UseAuthentication();
 
          app.UseHttpsRedirection();
-         app.UseMvc();
+         app.UseMvc(b =>
+         {
+            b.MapODataServiceRoute("odata", "odata", GetEdmModel());
+         });
+      }
+
+      private static IEdmModel GetEdmModel()
+      {
+         ODataConventionModelBuilder builder = new ODataConventionModelBuilder();
+         builder.EntitySet<BibleVersion>("BibleVersions");
+         builder.EntitySet<Verse>("Verses");
+         return builder.GetEdmModel();
       }
    }
 }

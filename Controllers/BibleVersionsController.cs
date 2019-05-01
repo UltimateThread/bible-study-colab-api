@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace BibleStudyColabApi.Controllers
 {
-   public class VersesController : ODataController
+   public class BibleVersionsController : ODataController
    {
       private readonly BibleContext _context;
 
-      public VersesController(BibleContext context)
+      public BibleVersionsController(BibleContext context)
       {
          _context = context;
       }
@@ -21,13 +21,13 @@ namespace BibleStudyColabApi.Controllers
       [EnableQuery]
       public IActionResult Get()
       {
-         return Ok(_context.Verses);
+         return Ok(_context.BibleVersions);
       }
 
       [EnableQuery]
-      public IActionResult Get(Guid key)
+      public IActionResult Get(string key)
       {
-         return Ok(_context.Verses.FirstOrDefault(c => c.Id == key));
+         return Ok(_context.BibleVersions.FirstOrDefault(c => c.Id == key));
       }
    }
 }
