@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BibleStudyColabApi.Models;
+using CsvHelper;
+using CsvHelper.Configuration;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -21,14 +23,21 @@ namespace BibleStudyColabApi
          // Due to the following error in building, we need to manually populate the DB
          // error CS8103: Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals.
          // This error is caused by the initial migration being too long
-         // To fix this the verses are extracted out into txt files and the DB is populated from those txt files
+         // To fix this the verses are extracted out into CSV files and the DB is populated from those CSV files
 
          /*
           To create and populate the DB do the following:
             1. Open Package Manager Console and run Update-Database (This will create the Bible database)
             2. When you first run the application, the Bible database will be populated if no verses are found
-          */
-         PopulateDB();
+         */
+         try
+         {
+            PopulateDB();
+         }
+         catch (Exception ex)
+         {
+            Console.WriteLine($"Failed to Populate DB: {ex.Message}");
+         }
 
          CreateWebHostBuilder(args).Build().Run();
       }
@@ -38,74 +47,59 @@ namespace BibleStudyColabApi
          var connectionString = @"Server=(localdb)\mssqllocaldb;Database=Bible;Trusted_Connection=True;ConnectRetryCount=0";
          var optionsBuilder = new DbContextOptionsBuilder<BibleContext>();
          optionsBuilder.UseSqlServer(connectionString);
-         BibleContext dbContext = new BibleContext(optionsBuilder.Options);
-
-         if (dbContext.BibleVersions.Count() == 0)
+         using (var dbContext = new BibleContext(optionsBuilder.Options))
          {
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000001", Abbreviation = "ASV", Language = "english", Version = "American Standard - ASV1901", InfoUrl = "http://en.wikipedia.org/wiki/American_Standard_Version" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000002", Abbreviation = "BBE", Language = "english", Version = "Bible in Basic English", InfoUrl = "http://en.wikipedia.org/wiki/Bible_in_Basic_English" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000003", Abbreviation = "DARBY", Language = "english", Version = "Darby English Bible", InfoUrl = "http://en.wikipedia.org/wiki/Darby_Bible" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000004", Abbreviation = "KJV", Language = "english", Version = "King James Version", InfoUrl = "http://en.wikipedia.org/wiki/King_James_Version" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000005", Abbreviation = "WBT", Language = "english", Version = "Webster's Bible", InfoUrl = "http://en.wikipedia.org/wiki/Webster%27s_Revision" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000006", Abbreviation = "WEB", Language = "english", Version = "World English Bible", InfoUrl = "http://en.wikipedia.org/wiki/World_English_Bible" });
-            dbContext.BibleVersions.Add(new BibleVersion { Id = "1000007", Abbreviation = "YLT", Language = "english", Version = "Young's Literal Translation", InfoUrl = "http://en.wikipedia.org/wiki/Young%27s_Literal_Translation" });
-            dbContext.SaveChanges();
-         }
-
-         if (dbContext.Verses.Count() == 0)
-         {
-            string[] files = Directory.GetFiles(@"Verses");
-
-            List<Task> tasks = new List<Task>();
-            foreach (var file in files)
+            if (dbContext.BibleVersions.Count() == 0)
             {
-               object arg = file;
-               var task = new TaskFactory().StartNew(new Action<object>((test) =>
+               // Find the BibleVersions.csv file and load its data into a collection of BibleVersion objects.
+               // Use those objects to populate the DB.
+               var file = Directory.GetFiles(@"DBInfo").Where(x => Path.GetFileName(x).Equals("BibleVersions.csv", StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+               if (file != null)
                {
-                  Debug.WriteLine($"Adding Verses from File: {test}");
-
-                  foreach (var line in File.ReadAllLines(test.ToString()))
+                  using (var reader = new StreamReader(file))
+                  using (var csv = new CsvReader(reader))
+                  using (var bibleContext = new BibleContext(optionsBuilder.Options))
                   {
-                     var values = line.Split("%%");
+                     csv.Configuration.RegisterClassMap<BibleVersionMap>();
+                     var records = csv.GetRecords<BibleVersion>().ToList();
 
-                     if (values.Length < 6)
-                        throw new Exception("Not enough values");
-
-                     BibleContext bibleContext = new BibleContext(optionsBuilder.Options);
-
-                     var bibleVersionId = values[0];
-                     var book = values[1];
-                     var testament = values[2];
-                     var chapterNumber = values[3];
-                     var verseNumber = values[4];
-                     var text = values[5];
-
-                     var verse = new Verse()
-                     {
-                        Id = Guid.NewGuid(),
-                        BibleVersionId = bibleVersionId,
-                        Book = book,
-                        Testament = testament,
-                        ChapterNumber = Convert.ToInt32(chapterNumber),
-                        VerseNumber = Convert.ToInt32(verseNumber),
-                        Text = text
-                     };
-
-                     Debug.WriteLine($"Adding Verse: BibleVersionId={verse.BibleVersionId}, Book={verse.Book}, Chapter={verse.ChapterNumber}, Verse={verse.VerseNumber}");
-                     bibleContext.Verses.Add(verse);
+                     bibleContext.BibleVersions.AddRange(records);
                      bibleContext.SaveChanges();
                   }
-               }), arg);
-
-               tasks.Add(task);
+               }
             }
-            Task.WaitAll(tasks.ToArray());
-            Debug.WriteLine("Finished Populating DB");
+
+            if (dbContext.Verses.Count() == 0)
+            {
+               // Find all the Verses CSV files and load their data into a collection of Verse objects.
+               // User those objects to populate the DB.
+               var files = Directory.GetFiles(@"DBInfo").Where(x => Path.GetExtension(x).Equals(".csv", StringComparison.CurrentCultureIgnoreCase) &&
+               !x.Contains("BibleVersions.csv")).ToList();
+
+               foreach (var file in files)
+               {
+                  Debug.WriteLine($"Adding Verses from File: {file}");
+
+                  using (var reader = new StreamReader(file))
+                  using (var csv = new CsvReader(reader))
+                  using (var bibleContext = new BibleContext(optionsBuilder.Options))
+                  {
+                     csv.Configuration.RegisterClassMap<VerseMap>();
+                     var records = csv.GetRecords<Verse>().ToList();
+
+                     foreach (var record in records)
+                        bibleContext.Verses.Add(record);
+
+                     bibleContext.SaveChanges();
+                  }
+               }
+               Debug.WriteLine("Finished Populating DB");
+            }
          }
       }
 
       public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-          WebHost.CreateDefaultBuilder(args)
-              .UseStartup<Startup>();
+         WebHost.CreateDefaultBuilder(args)
+            .UseStartup<Startup>();
    }
 }

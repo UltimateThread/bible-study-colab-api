@@ -7,36 +7,39 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="12.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Verses\" />
+     <Folder Include="DBInfo\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Verses\ASV_Verses.txt">
+    <None Update="DBInfo\ASV_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\BBE_Verses.txt">
+    <None Update="DBInfo\BBE_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\DBY_Verses.txt">
+    <None Update="DBInfo\BibleVersions.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\KJV_Verses.txt">
+    <None Update="DBInfo\DBY_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\WBT_Verses.txt">
+    <None Update="DBInfo\KJV_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\WEB_Verses.txt">
+    <None Update="DBInfo\WBT_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Verses\YLT_Verses.txt">
+    <None Update="DBInfo\WEB_Verses.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DBInfo\YLT_Verses.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>
